@@ -216,9 +216,9 @@ session.
 
 ### Git identity
 
-If `~/.gitconfig` exists on the host it is mounted read-only at startup, so the agent can make `git commit` with your correct author identity. Opt out by setting `PI_NO_GITCONFIG=1`.
+If `~/.gitconfig` exists on the host it is mounted read-only at startup, so the agent can make `git commit` with your correct author identity. If `~/.local.gitconfig` also exists, it is mounted read-only too so includes like `path = ~/.local.gitconfig` continue to work inside the container. Opt out by setting `PI_NO_GITCONFIG=1`.
 
-> **Note:** credential helpers referenced in `~/.gitconfig` (e.g. `osxkeychain`, `libsecret`) are not available inside the container. They fail gracefully — git falls back to prompting for credentials.
+> **Note:** credential helpers referenced in `~/.gitconfig` or `~/.local.gitconfig` (e.g. `osxkeychain`, `libsecret`) are not available inside the container. They fail gracefully — git falls back to prompting for credentials.
 
 ### Container context prompt
 

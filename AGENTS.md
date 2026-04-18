@@ -77,7 +77,7 @@ mise run ci      # lint + docker build + smoke test
 
   | Variable | Effect |
   |---|---|
-  | `PI_NO_GITCONFIG=1` | Suppress `~/.gitconfig` read-only mount |
+  | `PI_NO_GITCONFIG=1` | Suppress `~/.gitconfig` and `~/.local.gitconfig` read-only mounts |
   | `PI_NO_CONTAINER_PROMPT=1` | Suppress the container-context `--append-system-prompt` (no Docker socket, sudo, or root) |
   | `PI_SSH_AGENT=1` | Forward SSH agent socket; also mounts `~/.ssh/known_hosts` and `~/.ssh/config` read-only |
   | `PI_LOCAL_MODELS=1` | Add `--network=host` so local model servers are reachable at `localhost`; on macOS Docker Desktop use `host.docker.internal` instead |
