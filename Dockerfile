@@ -3,10 +3,12 @@ FROM cgr.dev/chainguard/node:latest-dev@sha256:d201cee80fc4bd2881571d9d7c25c3551
 # openssh-client: ssh binary for git-over-SSH (PI_SSH_AGENT=1) and ssh-add.
 USER root
 RUN apk add --no-cache \
-        curl \
         ca-certificates \
+        curl \
+        fd \
         git \
         openssh-client \
+        ripgrep \
         tmux
 
 # Install mise (GPG-verified via mise-release.asc).
