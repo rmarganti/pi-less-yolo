@@ -44,6 +44,39 @@ RUN uv python install 3.14.4 \
 # Install pi globally
 RUN npm install -g "@mariozechner/pi-coding-agent@0.67.68"
 
+# Install ish from a pinned GitHub release.
+ARG TARGETARCH
+ARG ISH_VERSION=1.0.0
+RUN <<'EOF'
+set -euo pipefail
+
+case "${TARGETARCH}" in
+    amd64) ish_target="x86_64-unknown-linux-musl" ;;
+    arm64) ish_target="aarch64-unknown-linux-musl" ;;
+    *)
+        echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2
+        exit 1
+        ;;
+esac
+
+base_url="https://github.com/rmarganti/ish/releases/download/v${ISH_VERSION}"
+artifact="ish-v${ISH_VERSION}-${ish_target}.tar.gz"
+
+curl -fsSL "${base_url}/${artifact}" -o "/tmp/${artifact}"
+curl -fsSL "${base_url}/SHA256SUMS" -o /tmp/SHA256SUMS
+
+(
+    cd /tmp
+    rg " ${artifact}$" SHA256SUMS | sha256sum -c -
+)
+
+tar -C /usr/local/bin -xzf "/tmp/${artifact}" ish
+chmod +x /usr/local/bin/ish
+ish version
+
+rm -f "/tmp/${artifact}" /tmp/SHA256SUMS
+EOF
+
 # Prepend extension binaries (host-mounted via /pi-agent). Security: binaries
 # here can shadow any command; no privilege escalation (--cap-drop=ALL,
 # --no-new-privileges), but review ~/.pi/agent/npm-global/bin/ after installs.

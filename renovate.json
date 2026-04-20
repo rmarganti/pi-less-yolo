@@ -55,6 +55,17 @@
       ],
       "depNameTemplate": "@mariozechner/pi-coding-agent",
       "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^Dockerfile$/"],
+      "matchStrings": [
+        "ISH_VERSION=(?<currentValue>[\\d.]+(?:[-+][0-9A-Za-z.-]+)?)"
+      ],
+      "depNameTemplate": "ish",
+      "datasourceTemplate": "github-releases",
+      "packageNameTemplate": "rmarganti/ish",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
     }
   ]
 }
