@@ -3,6 +3,7 @@
 set -euo pipefail
 
 mise run test:pi
+mise run test:gh
 mise run test:python
 mise run test:limits
 mise run test:readonly

@@ -33,6 +33,7 @@ If you use [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Aider,
 - [mise](https://mise.jdx.dev/installing-mise.html) >= 2024.12.0
 - [Docker](https://docs.docker.com/get-docker/) (Desktop on macOS, Engine on Linux) or [Podman](https://podman.io/getting-started/installation) (via `PI_CONTAINER_RUNTIME=podman`, the `podman-docker` package, or a symlink)
 - git
+- [GitHub CLI](https://cli.github.com/) on the host if you want to use `mise run pi:gh`
 
 ## Install
 
@@ -42,7 +43,7 @@ cd pi-less-yolo
 mise run install
 ```
 
-`install` writes a single file — `~/.config/mise/conf.d/pi-less-yolo.toml` — that points mise at the `tasks/` directory in the cloned repo. The five pi tasks become available globally from any directory. The repo must stay at the cloned path; if you move it, re-run `mise run install`.
+`install` writes a single file — `~/.config/mise/conf.d/pi-less-yolo.toml` — that points mise at the `tasks/` directory in the cloned repo. The pi tasks become available globally from any directory. The repo must stay at the cloned path; if you move it, re-run `mise run install`.
 
 Then build the Docker image (one-time, ~2 minutes):
 
@@ -97,6 +98,7 @@ alias pi='mise run pi'
 | Task | Description |
 |---|---|
 | `mise run pi` | Run the pi AI coding agent in the sandboxed container |
+| `mise run pi:gh` | Run pi with host GitHub auth for `gh` and SSH agent forwarding for git-over-SSH |
 | `mise run pi:readonly` | Run pi with the project directory mounted read-only and file-modification tools disabled |
 | `mise run pi:build` | Build or rebuild the Docker container image |
 | `mise run pi:shell` | Open a bash shell in the container (same mounts as `pi`) |
@@ -214,11 +216,35 @@ session.
 > **Accepted risk.** Audit installed packages with `pi list` and review
 > `~/.pi/agent/git/` and `~/.pi/agent/npm/` periodically.
 
+### Agent-agnostic config
+
+If `~/.agents` exists on the host it is mounted read-only at `/home/piuser/.agents` inside the container. This directory holds agent-agnostic configuration (skills, prompts, etc.) that works across pi, OpenCode, Claude Code, and other agents.
+
 ### Git identity
 
 If `~/.gitconfig` exists on the host it is mounted read-only at startup, so the agent can make `git commit` with your correct author identity. If `~/.local.gitconfig` also exists, it is mounted read-only too so includes like `path = ~/.local.gitconfig` continue to work inside the container. Opt out by setting `PI_NO_GITCONFIG=1`.
 
 > **Note:** credential helpers referenced in `~/.gitconfig` or `~/.local.gitconfig` (e.g. `osxkeychain`, `libsecret`) are not available inside the container. They fail gracefully — git falls back to prompting for credentials.
+
+### GitHub CLI access
+
+If you want `gh pr`, `gh api`, or other GitHub CLI commands inside the container, authenticate the host `gh` CLI once:
+
+```bash
+gh auth login
+```
+
+Then launch pi with:
+
+```bash
+mise run pi:gh
+```
+
+If you use GitHub Enterprise Server, set `GH_HOST=github.example.com` before `mise run pi:gh` so the host-specific token is selected.
+
+`pi:gh` enables SSH agent forwarding for your existing `git@github.com:...` remotes and reads a token from the host `gh` CLI, forwarding it into the container as `GH_TOKEN` for that session only. The token is not written to `~/.pi/agent` or the container home directory.
+
+> **Security note:** `pi:gh` combines the SSH-agent risk described below with GitHub API access via your host `gh` login. The token is session-scoped in the container, but anything running inside that container can use it while the session is active.
 
 ### Container context prompt
 
@@ -233,6 +259,8 @@ PI_SSH_AGENT=1 mise run pi
 ```
 
 Or export it in your shell profile to make it permanent.
+
+If you use GitHub and want both SSH-based git access and the `gh` CLI inside the container, prefer `mise run pi:gh` instead.
 
 > **Security note:** a compromised container can authenticate as you to any SSH server your agent has loaded. Review loaded keys with `ssh-add -l` before enabling. On macOS, Docker Desktop exposes the host SSH agent via a fixed path inside the VM. The socket is created root-owned with restricted permissions; the root group (GID 0) is added as a supplementary group so the non-root container user can access it — no additional setup is needed. On Linux, ensure `ssh-agent` is running and `SSH_AUTH_SOCK` is exported in your shell environment.
 
@@ -348,7 +376,7 @@ sudo ln -s "$(which podman)" /usr/local/bin/docker
 > [Bash manual on Aliases](https://www.gnu.org/software/bash/manual/bash.html#Aliases).
 > Use `PI_CONTAINER_RUNTIME=podman`, the `podman-docker` package, or a symlink instead.
 
-All tasks (`pi`, `pi:readonly`, `pi:build`, `pi:shell`) work identically with podman.
+All tasks (`pi`, `pi:gh`, `pi:readonly`, `pi:build`, `pi:shell`) work identically with podman.
 
 ## Customising the container
 

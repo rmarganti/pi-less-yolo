@@ -1,11 +1,13 @@
 FROM cgr.dev/chainguard/node:latest-dev@sha256:d201cee80fc4bd2881571d9d7c25c3551a32281d655409c80d9c600214afa5cf
 
 # openssh-client: ssh binary for git-over-SSH (PI_SSH_AGENT=1) and ssh-add.
+# gh: GitHub CLI used by mise run pi:gh.
 USER root
 RUN apk add --no-cache \
         ca-certificates \
         curl \
         fd \
+        gh \
         git \
         openssh-client \
         ripgrep \

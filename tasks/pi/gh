@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+#MISE description="Run pi with host GitHub auth and SSH agent forwarding"
+#MISE raw=true
+#MISE dir="{{cwd}}"
+set -euo pipefail
+
+if ! command -v gh > /dev/null 2>&1; then
+  echo "error: host gh CLI not found — install GitHub CLI and run gh auth login first" >&2
+  exit 1
+fi
+
+gh_host="${GH_HOST:-}"
+gh_auth_var="GH_TOKEN"
+gh_login_hint="gh auth login"
+gh_token_args=()
+
+if [[ -n "${gh_host}" ]]; then
+  gh_token_args=(--hostname "${gh_host}")
+  gh_login_hint="gh auth login --hostname ${gh_host}"
+  case "${gh_host}" in
+    github.com|*.ghe.com) ;;
+    *) gh_auth_var="GH_ENTERPRISE_TOKEN" ;;
+  esac
+fi
+
+if ! gh_token="$(gh auth token "${gh_token_args[@]}")"; then
+  echo "error: failed to read a GitHub token from host gh — run: ${gh_login_hint}" >&2
+  exit 1
+fi
+
+if [[ -z "${gh_token}" ]]; then
+  echo "error: host gh returned an empty token — run: ${gh_login_hint}" >&2
+  exit 1
+fi
+
+export "${gh_auth_var}=${gh_token}"
+export PI_SSH_AGENT=1
+
+exec "${MISE_TASK_DIR}/_default" "$@"

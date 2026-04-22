@@ -1,4 +1,5 @@
 # Builds DOCKER_FLAGS for pi container tasks. Source this file; do not execute directly.
+# shellcheck shell=bash
 # Usage: source "$(dirname "$0")/_docker_flags"
 
 PI_IMAGE="pi-less-yolo:latest"
@@ -57,13 +58,19 @@ if [[ "${DOCKER_CMD}" == "podman" ]]; then
 fi
 
 # Forward pi-related env vars and API keys if set on the host.
-# Auth file (~/.pi/agent/auth.json) takes priority over these if present.
+# Auth file (~/.pi/agent/auth.json) takes priority over provider env vars if present.
 PI_ENV_VARS=(
   PI_SKIP_VERSION_CHECK
   PI_CACHE_RETENTION
   PI_PACKAGE_DIR
   VISUAL
   EDITOR
+  GH_HOST
+)
+
+# Secrets use --env NAME so values are inherited from the current environment
+# without appearing directly in the docker/podman argv.
+PI_SECRET_ENV_VARS=(
   ANTHROPIC_API_KEY
   AZURE_OPENAI_API_KEY
   OPENAI_API_KEY
@@ -79,10 +86,18 @@ PI_ENV_VARS=(
   KIMI_API_KEY
   MINIMAX_API_KEY
   MINIMAX_CN_API_KEY
+  GH_TOKEN
+  GITHUB_TOKEN
+  GH_ENTERPRISE_TOKEN
+  GITHUB_ENTERPRISE_TOKEN
 )
 for var in "${PI_ENV_VARS[@]}"; do
   [ -n "${!var:-}" ] && DOCKER_FLAGS+=("--env" "$var=${!var}")
 done
+for var in "${PI_SECRET_ENV_VARS[@]}"; do
+  [ -n "${!var:-}" ] && DOCKER_FLAGS+=("--env" "$var")
+done
+
 # Agent-agnostic config: mount ~/.agents read-only when present.
 # Contains skills and other configs shared across agents (pi, opencode, etc.).
 if [[ -d "${HOME}/.agents" ]]; then
