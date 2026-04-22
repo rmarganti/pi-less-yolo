@@ -83,6 +83,11 @@ PI_ENV_VARS=(
 for var in "${PI_ENV_VARS[@]}"; do
   [ -n "${!var:-}" ] && DOCKER_FLAGS+=("--env" "$var=${!var}")
 done
+# Agent-agnostic config: mount ~/.agents read-only when present.
+# Contains skills and other configs shared across agents (pi, opencode, etc.).
+if [[ -d "${HOME}/.agents" ]]; then
+  DOCKER_FLAGS+=("--volume" "${HOME}/.agents:/home/piuser/.agents:ro")
+fi
 
 # Git identity: mount ~/.gitconfig and ~/.local.gitconfig read-only when present.
 # Opt out with PI_NO_GITCONFIG=1. Credential helpers (e.g. osxkeychain) are
